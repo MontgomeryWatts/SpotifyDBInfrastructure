@@ -8,11 +8,6 @@ variable "site_url" {
   description = "The URL of the main website"
 }
 
-variable "environment" {
-  type        = "string"
-  description = "The environment to provision resources for"
-}
-
 variable "remote_backend_bucket_name" {
   type        = "string"
   description = "The name of the bucket to store the remote state in"
