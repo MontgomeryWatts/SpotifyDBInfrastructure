@@ -10,6 +10,25 @@ resource "aws_s3_bucket" "bucket" {
   }
 }
 
+data "aws_iam_policy_document" "bucket_policy_document" {
+  version = "2012-10-17"
+  statement {
+    effect    = "Allow"
+    actions   = ["s3:PutObject"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/*"]
+    principals {
+      type        = "AWS"
+      identifiers = "${var.import_lambda_role_arns}"
+    }
+  }
+}
+
+
+resource "aws_s3_bucket_policy" "bucket_policy" {
+  bucket = "${aws_s3_bucket.bucket.id}"
+  policy = "${data.aws_iam_policy_document.bucket_policy_document.json}"
+}
+
 resource "aws_sns_topic" "spotify_data_topic" {
   name = "spotify-data-topic"
 }
