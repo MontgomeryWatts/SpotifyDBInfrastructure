@@ -1,3 +1,9 @@
+locals {
+  lambda_timeout_seconds         = "5"
+  sqs_visibility_timeout_seconds = "${local.lambda_timeout_seconds * 6}" # https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html#events-sqs-queueconfig
+}
+
+
 resource "aws_lambda_function" "lambda" {
   s3_bucket     = "${var.source_bucket_name}"
   s3_key        = "${var.lambda_name}.jar"
@@ -6,7 +12,7 @@ resource "aws_lambda_function" "lambda" {
   handler       = "${var.handler_name}"
   runtime       = "java8"
   role          = "${aws_iam_role.lambda_role.arn}"
-  timeout       = "5"
+  timeout       = "${local.lambda_timeout_seconds}"
 
   environment {
     variables = {
@@ -49,4 +55,53 @@ data "aws_iam_policy_document" "role_execution_policy_document" {
     "logs:PutLogEvents"]
     resources = ["arn:aws:logs:*:*:*"]
   }
+  statement {
+    sid    = "AllowSQSOperations"
+    effect = "Allow"
+    actions = ["sqs:ReceiveMessage",
+      "sqs:DeleteMessage",
+    "sqs:GetQueueAttributes"]
+    resources = ["${aws_sqs_queue.sqs.arn}"]
+  }
+}
+
+resource "aws_lambda_event_source_mapping" "trigger_lambda_from_sqs" {
+  event_source_arn = "${aws_sqs_queue.sqs.arn}"
+  function_name    = "${aws_lambda_function.lambda.arn}"
+  batch_size       = "1"
+}
+
+
+resource "aws_sqs_queue" "sqs" {
+  visibility_timeout_seconds = "${local.sqs_visibility_timeout_seconds}"
+}
+
+resource "aws_sqs_queue_policy" "sqs_policy" {
+  queue_url = "${aws_sqs_queue.sqs.id}"
+  policy    = "${data.aws_iam_policy_document.queue_policy_document.json}"
+}
+
+data "aws_iam_policy_document" "queue_policy_document" {
+  version = "2012-10-17"
+  statement {
+    effect    = "Allow"
+    actions   = ["sqs:SendMessage"]
+    resources = ["${aws_sqs_queue.sqs.arn}"]
+    principals {
+      type        = "AWS"
+      identifiers = ["*"]
+    }
+    condition {
+      test     = "ArnEquals"
+      variable = "aws:SourceArn"
+      values   = ["${var.sns_topic_arn}"]
+    }
+  }
+}
+
+resource "aws_sns_topic_subscription" "subscribe_sqs_to_sns" {
+  protocol      = "sqs"
+  topic_arn     = "${var.sns_topic_arn}"
+  endpoint      = "${aws_sqs_queue.sqs.arn}"
+  filter_policy = "${jsonencode(map("type", list(var.entity_type)))}"
 }

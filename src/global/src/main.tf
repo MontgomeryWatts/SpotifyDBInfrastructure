@@ -62,7 +62,7 @@ module "remote_backend" {
 }
 
 module "s3_datalake" {
-  source             = "./modules/datalake"
-  bucket_name        = "spotifydb-datalake"
+  source                  = "./modules/datalake"
+  bucket_name             = "spotifydb-datalake"
   import_lambda_role_arns = "${data.terraform_remote_state.import_remote_state.outputs.lambda_role_arns}"
 }
