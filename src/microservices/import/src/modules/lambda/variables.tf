@@ -28,3 +28,13 @@ variable "handler_name" {
   type        = "string"
   description = "The name of the handler for the AWS Lambda to call"
 }
+
+variable "sns_topic_arn" {
+  type        = "string"
+  description = "The ARN of the SNS topic that orchestrates the import process"
+}
+
+variable "entity_type" {
+  type        = "string"
+  description = "The type of entity to filter SNS messages on"
+}
