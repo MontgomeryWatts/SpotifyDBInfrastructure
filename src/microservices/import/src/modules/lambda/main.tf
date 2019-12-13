@@ -14,11 +14,7 @@ resource "aws_lambda_function" "lambda" {
   timeout       = "${var.lambda_timeout_seconds}"
 
   environment {
-    variables = {
-      BUCKET_NAME    = "${var.datalake_bucket_name}"
-      SPOTIFY_ID     = "${var.spotify_id}"
-      SPOTIFY_SECRET = "${var.spotify_secret}"
-    }
+    variables = "${var.lambda_environment_variables}"
   }
 }
 

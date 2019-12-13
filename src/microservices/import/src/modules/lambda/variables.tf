@@ -1,22 +1,6 @@
-variable "spotify_id" {
-  type        = "string"
-  description = "The (secret) client id required to connect to Spotify"
-}
-
-variable "spotify_secret" {
-  type        = "string"
-  description = "The client secret required to connect to Spotify"
-}
-
 variable "source_bucket_name" {
   type        = "string"
   description = "The S3 bucket containing the source code for the lambda"
-}
-
-
-variable "datalake_bucket_name" {
-  type        = "string"
-  description = "The S3 bucket to place data in"
 }
 
 variable "lambda_name" {
@@ -57,4 +41,9 @@ variable "lambda_memory_size" {
 variable "lambda_file_name" {
   type        = "string"
   description = "The name of the deployment package file"
+}
+
+variable "lambda_environment_variables" {
+  type        = "map"
+  description = "The environment variables to provide to the lamdba"
 }
