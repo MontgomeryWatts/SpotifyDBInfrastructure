@@ -38,3 +38,23 @@ variable "entity_type" {
   type        = "string"
   description = "The type of entity to filter SNS messages on"
 }
+
+variable "lambda_timeout_seconds" {
+  type        = "string"
+  description = "How many seconds the lambda may execute before timing out"
+}
+
+variable "lambda_runtime" {
+  type        = "string"
+  description = "A version of a programming language that AWS lambda supports"
+}
+
+variable "lambda_memory_size" {
+  type        = "string"
+  description = "How much memory to provision for the lambda in MB"
+}
+
+variable "lambda_file_name" {
+  type        = "string"
+  description = "The name of the deployment package file"
+}

@@ -1,18 +1,17 @@
 locals {
-  lambda_timeout_seconds         = "5"
-  sqs_visibility_timeout_seconds = "${local.lambda_timeout_seconds * 6}" # https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html#events-sqs-queueconfig
+  sqs_visibility_timeout_seconds = "${var.lambda_timeout_seconds * 6}" # https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html#events-sqs-queueconfig
 }
 
 
 resource "aws_lambda_function" "lambda" {
   s3_bucket     = "${var.source_bucket_name}"
-  s3_key        = "${var.lambda_name}.jar"
+  s3_key        = "${var.lambda_file_name}"
   function_name = "${var.lambda_name}"
-  memory_size   = "320"
+  memory_size   = "${var.lambda_memory_size}"
   handler       = "${var.handler_name}"
-  runtime       = "java8"
+  runtime       = "${var.lambda_runtime}"
   role          = "${aws_iam_role.lambda_role.arn}"
-  timeout       = "${local.lambda_timeout_seconds}"
+  timeout       = "${var.lambda_timeout_seconds}"
 
   environment {
     variables = {
