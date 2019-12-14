@@ -33,7 +33,8 @@ resource "aws_s3_bucket" "bucket" {
 }
 
 module "import-orchestration-topic" {
-  source = "./modules/sns"
+  source                   = "./modules/sns"
+  fan_out_lambda_role_arns = ["${module.import-artist-albums-lambda.lambda_role_arn}"]
 }
 
 module "import-artist-lambda" {
