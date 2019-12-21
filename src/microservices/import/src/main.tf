@@ -34,47 +34,5 @@ resource "aws_s3_bucket" "bucket" {
 
 module "import-orchestration-topic" {
   source                   = "./modules/sns"
-  fan_out_lambda_role_arns = ["${module.import-artist-albums-lambda.lambda_role_arn}"]
-}
-
-module "import-artist-lambda" {
-  source                       = "./modules/lambda"
-  lambda_name                  = "spotifydb-artist-import-lambda"
-  lambda_file_name             = "spotifydb-artist-import-lambda.jar"
-  handler_name                 = "com.spotifydb.Handler::handleSqsMessage"
-  lambda_timeout_seconds       = "5"
-  lambda_runtime               = "java8"
-  lambda_memory_size           = "320"
-  lambda_environment_variables = "${local.import_environment_variables}"
-  entity_type                  = "artist"
-  source_bucket_name           = "${aws_s3_bucket.bucket.id}"
-  sns_topic_arn                = "${module.import-orchestration-topic.sns_topic_arn}"
-}
-
-module "import-album-lambda" {
-  source                       = "./modules/lambda"
-  lambda_name                  = "spotifydb-album-import-lambda"
-  lambda_file_name             = "spotifydb-album-import-lambda.jar"
-  handler_name                 = "com.spotifydb.Handler::handleSqsMessage"
-  lambda_timeout_seconds       = "5"
-  lambda_runtime               = "java8"
-  lambda_memory_size           = "320"
-  lambda_environment_variables = "${local.import_environment_variables}"
-  entity_type                  = "album"
-  source_bucket_name           = "${aws_s3_bucket.bucket.id}"
-  sns_topic_arn                = "${module.import-orchestration-topic.sns_topic_arn}"
-}
-
-module "import-artist-albums-lambda" {
-  source                       = "./modules/lambda"
-  lambda_name                  = "spotifydb-artist-album-fanout-lambda"
-  lambda_file_name             = "get-artist-albums.zip"
-  handler_name                 = "main"
-  lambda_timeout_seconds       = "10"
-  lambda_runtime               = "go1.x"
-  lambda_memory_size           = "128"
-  lambda_environment_variables = "${local.fan_out_environment_variables}"
-  entity_type                  = "artist"
-  source_bucket_name           = "${aws_s3_bucket.bucket.id}"
-  sns_topic_arn                = "${module.import-orchestration-topic.sns_topic_arn}"
+  #fan_out_lambda_role_arns = ["${module.import-artist-albums-lambda.lambda_role_arn}"]
 }
