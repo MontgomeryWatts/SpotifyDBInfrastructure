@@ -1,3 +1,4 @@
-# output "lambda_role_arns" {
-#   value = ["${module.import-album-lambda.lambda_role_arn}", "${module.import-artist-lambda.lambda_role_arn}"]
-# }
+output "producer_arns" {
+  value       = ["${module.import-entity-lambda.lambda_role_arn}"]
+  description = "The ARNs of resources that should be granted PUT access to the datalake"
+}

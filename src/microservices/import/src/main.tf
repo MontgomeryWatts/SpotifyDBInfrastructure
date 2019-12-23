@@ -33,6 +33,36 @@ resource "aws_s3_bucket" "bucket" {
 }
 
 module "import-orchestration-topic" {
-  source                   = "./modules/sns"
-  #fan_out_lambda_role_arns = ["${module.import-artist-albums-lambda.lambda_role_arn}"]
+  source         = "./modules/sns"
+  publisher_arns = ["${module.fan-out-lambda.lambda_role_arn}"]
+}
+
+module "fan-out-lambda" {
+  source                         = "./modules/lambda"
+  lambda_name                    = "spotifydb-import-fan-out-lambda"
+  lambda_file_name               = "fan-out-lambda.zip"
+  handler_name                   = "main"
+  lambda_timeout_seconds         = "5"
+  lambda_runtime                 = "go1.x"
+  lambda_memory_size             = "128"
+  messages_per_lambda_invocation = "1"
+  lambda_environment_variables   = "${local.fan_out_environment_variables}"
+  entity_types                   = ["artist"]
+  source_bucket_name             = "${aws_s3_bucket.bucket.id}"
+  sns_topic_arn                  = "${module.import-orchestration-topic.sns_topic_arn}"
+}
+
+module "import-entity-lambda" {
+  source                         = "./modules/lambda"
+  lambda_name                    = "spotifydb-import-entity-lambda"
+  lambda_file_name               = "import-entity-lambda.zip"
+  handler_name                   = "main"
+  lambda_timeout_seconds         = "10"
+  lambda_runtime                 = "go1.x"
+  lambda_memory_size             = "128"
+  messages_per_lambda_invocation = "10"
+  lambda_environment_variables   = "${local.fan_out_environment_variables}"
+  entity_types                   = ["album", "artist"]
+  source_bucket_name             = "${aws_s3_bucket.bucket.id}"
+  sns_topic_arn                  = "${module.import-orchestration-topic.sns_topic_arn}"
 }

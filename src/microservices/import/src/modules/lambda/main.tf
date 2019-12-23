@@ -63,7 +63,7 @@ data "aws_iam_policy_document" "role_execution_policy_document" {
 resource "aws_lambda_event_source_mapping" "trigger_lambda_from_sqs" {
   event_source_arn = "${aws_sqs_queue.sqs.arn}"
   function_name    = "${aws_lambda_function.lambda.arn}"
-  batch_size       = "1"
+  batch_size       = "${var.messages_per_lambda_invocation}"
 }
 
 
@@ -95,8 +95,9 @@ data "aws_iam_policy_document" "queue_policy_document" {
 }
 
 resource "aws_sns_topic_subscription" "subscribe_sqs_to_sns" {
-  protocol      = "sqs"
-  topic_arn     = "${var.sns_topic_arn}"
-  endpoint      = "${aws_sqs_queue.sqs.arn}"
-  filter_policy = "${jsonencode(map("type", list(var.entity_type)))}"
+  protocol             = "sqs"
+  topic_arn            = "${var.sns_topic_arn}"
+  endpoint             = "${aws_sqs_queue.sqs.arn}"
+  filter_policy        = "${jsonencode(map("entity_type", var.entity_types))}"
+  raw_message_delivery = "true"
 }
