@@ -10,7 +10,7 @@ data "aws_iam_policy_document" "topic_policy_document" {
     resources = ["${aws_sns_topic.import_data_topic.arn}"]
     principals {
       type        = "AWS"
-      identifiers = "${var.fan_out_lambda_role_arns}"
+      identifiers = "${var.publisher_arns}"
     }
   }
 }

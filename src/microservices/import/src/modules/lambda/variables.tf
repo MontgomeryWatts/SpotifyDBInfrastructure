@@ -18,9 +18,9 @@ variable "sns_topic_arn" {
   description = "The ARN of the SNS topic that orchestrates the import process"
 }
 
-variable "entity_type" {
-  type        = "string"
-  description = "The type of entity to filter SNS messages on"
+variable "entity_types" {
+  type        = "list"
+  description = "The list of entity type strings to fiter SNS messages on"
 }
 
 variable "lambda_timeout_seconds" {
@@ -46,4 +46,9 @@ variable "lambda_file_name" {
 variable "lambda_environment_variables" {
   type        = "map"
   description = "The environment variables to provide to the lamdba"
+}
+
+variable "messages_per_lambda_invocation" {
+  type        = "string"
+  description = "Integer defining how many sqs messages should be processed at a time"
 }
