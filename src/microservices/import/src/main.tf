@@ -61,7 +61,7 @@ module "import-entity-lambda" {
   lambda_runtime                 = "go1.x"
   lambda_memory_size             = "128"
   messages_per_lambda_invocation = "10"
-  lambda_environment_variables   = "${local.fan_out_environment_variables}"
+  lambda_environment_variables   = "${local.import_environment_variables}"
   entity_types                   = ["album", "artist"]
   source_bucket_name             = "${aws_s3_bucket.bucket.id}"
   sns_topic_arn                  = "${module.import-orchestration-topic.sns_topic_arn}"
