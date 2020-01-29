@@ -18,7 +18,7 @@ data "aws_iam_policy_document" "bucket_policy_document" {
     resources = ["arn:aws:s3:::${var.bucket_name}/*"]
     principals {
       type        = "AWS"
-      identifiers = "${var.import_lambda_role_arns}"
+      identifiers = "${var.producer_arns}"
     }
   }
 }
