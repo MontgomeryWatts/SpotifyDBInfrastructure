@@ -3,7 +3,7 @@ variable "bucket_name" {
   description = "The name of the bucket to create"
 }
 
-variable "import_lambda_role_arns" {
+variable "producer_arns" {
   type        = "list"
-  description = "The arns of the roles to allow PUT access for"
+  description = "The ARNs of the resources to allow PUT access for"
 }

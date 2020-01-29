@@ -13,16 +13,6 @@ terraform {
   }
 }
 
-data "terraform_remote_state" "import_remote_state" {
-  backend = "s3"
-  config = {
-    bucket  = "spotifydb-remote-state"
-    key     = "microservices/import/terraform.tfstate"
-    region  = "${var.aws_region}"
-    profile = "terraform-user"
-  }
-}
-
 locals {
   aliases = ["${var.site_url}", "www.${var.site_url}"]
 }
@@ -59,10 +49,4 @@ module "remote_backend" {
   bucket_name       = "${var.remote_backend_bucket_name}"
   terraform_arn     = "${var.terraform_arn}"
   enable_versioning = true
-}
-
-module "s3_datalake" {
-  source                  = "./modules/datalake"
-  bucket_name             = "spotifydb-datalake"
-  import_lambda_role_arns = "${data.terraform_remote_state.import_remote_state.outputs.producer_arns}"
 }

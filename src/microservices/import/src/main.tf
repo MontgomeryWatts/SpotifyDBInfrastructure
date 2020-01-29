@@ -32,6 +32,13 @@ resource "aws_s3_bucket" "bucket" {
   bucket = "spotifydb-import-lambdas"
 }
 
+module "datalake" {
+  source        = "./modules/datalake"
+  bucket_name   = "${var.bucket_name}"
+  producer_arns = ["${module.import-entity-lambda.lambda_role_arn}"]
+}
+
+
 module "import-orchestration-topic" {
   source         = "./modules/sns"
   publisher_arns = ["${module.fan-out-lambda.lambda_role_arn}"]
