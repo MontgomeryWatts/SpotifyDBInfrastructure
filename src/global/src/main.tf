@@ -13,16 +13,6 @@ terraform {
   }
 }
 
-data "terraform_remote_state" "import_remote_state" {
-  backend = "s3"
-  config = {
-    bucket  = "spotifydb-remote-state"
-    key     = "microservices/import/terraform.tfstate"
-    region  = "${var.aws_region}"
-    profile = "terraform-user"
-  }
-}
-
 locals {
   aliases = ["${var.site_url}", "www.${var.site_url}"]
 }
