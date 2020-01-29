@@ -60,9 +60,3 @@ module "remote_backend" {
   terraform_arn     = "${var.terraform_arn}"
   enable_versioning = true
 }
-
-module "s3_datalake" {
-  source                  = "./modules/datalake"
-  bucket_name             = "spotifydb-datalake"
-  import_lambda_role_arns = "${data.terraform_remote_state.import_remote_state.outputs.producer_arns}"
-}
