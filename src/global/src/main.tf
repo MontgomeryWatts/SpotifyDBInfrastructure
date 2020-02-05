@@ -44,6 +44,11 @@ module "cloudfront" {
   aliases            = "${local.aliases}"
 }
 
+module "api_gateway" {
+  source = "./modules/api_gateway"
+}
+
+
 module "remote_backend" {
   source            = "./modules/terraform_backend"
   bucket_name       = "${var.remote_backend_bucket_name}"
