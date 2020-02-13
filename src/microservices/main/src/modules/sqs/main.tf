@@ -25,8 +25,9 @@ data "aws_iam_policy_document" "queue_policy_document" {
   }
 }
 
-resource "aws_sns_topic_subscription" "user_updates_sqs_target" {
-  topic_arn = "${var.sns_topic_arn}"
-  protocol  = "sqs"
-  endpoint  = "${aws_sqs_queue.spotifydb_main_sqs.arn}"
+resource "aws_sns_topic_subscription" "subscribe_sqs_to_sns" {
+  topic_arn            = "${var.sns_topic_arn}"
+  protocol             = "sqs"
+  endpoint             = "${aws_sqs_queue.spotifydb_main_sqs.arn}"
+  raw_message_delivery = "true"
 }

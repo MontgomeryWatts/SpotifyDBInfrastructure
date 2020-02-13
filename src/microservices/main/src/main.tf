@@ -13,11 +13,11 @@ terraform {
   }
 }
 
-data "terraform_remote_state" "global_remote_state" {
+data "terraform_remote_state" "import_remote_state" {
   backend = "s3"
   config = {
     bucket  = "spotifydb-remote-state"
-    key     = "global/terraform.tfstate"
+    key     = "microservices/import/terraform.tfstate"
     region  = "${var.aws_region}"
     profile = "terraform-user"
   }
@@ -25,6 +25,6 @@ data "terraform_remote_state" "global_remote_state" {
 
 module "sqs" {
   source        = "./modules/sqs"
-  sns_topic_arn = "${data.terraform_remote_state.global_remote_state.outputs.datalake_sns_topic_arn}"
+  sns_topic_arn = "${data.terraform_remote_state.import_remote_state.outputs.import_sns_topic_arn}"
 }
 
