@@ -1,4 +1,5 @@
 provider "mongodbatlas" {
+  version     = "~> 0.3.1"
   public_key  = "${var.mongodb_atlas_public_key}"
   private_key = "${var.mongodb_atlas_private_key}"
 }
@@ -35,4 +36,73 @@ resource "mongodbatlas_cluster" "mongodb_atlas_playlist_cluster" {
   backing_provider_name       = "AWS"
   provider_instance_size_name = "M2"
   provider_region_name        = "${var.aws_region}"
+
+  lifecycle { # Can't modify M2 instances in place
+    ignore_changes = [
+      provider_region_name, # Atlas formats us-east-1 as US-EAST-1 and terraform tries to change it
+    ]
+  }
+}
+
+resource "mongodbatlas_database_user" "name" {
+  username      = "lambda-producer"
+  password      = "CHANGEMANUALLYINATLAS"
+  project_id    = "${mongodbatlas_project.mongodb_atlas_playlist_project.id}"
+  database_name = "admin"
+
+  roles {
+    role_name     = "readWrite"
+    database_name = "music"
+  }
+}
+
+resource "mongodbatlas_network_container" "spotifydb_playlist_network_container" {
+  project_id       = "${mongodbatlas_project.mongodb_atlas_playlist_project.id}"
+  provider_name    = "AWS"
+  atlas_cidr_block = "192.168.0.0/21"
+  region_name      = "${var.aws_region}"
+
+  lifecycle {
+    ignore_changes = [
+      region_name, # Atlas formats us-east-1 as US-EAST-1 and terraform tries to change it
+    ]
+  }
+}
+
+resource "aws_vpc" "lambda_to_mongodbatlas_vpc" {
+  cidr_block           = "10.0.0.0/16"
+  enable_dns_hostnames = true
+  enable_dns_support   = true
+  instance_tenancy     = "default" # lambdas cannot connect to dedicated vpcs
+}
+
+data "aws_caller_identity" "identity" {
+
+}
+
+# MongoDB Atlas VPC requests peering with AWS VPC, AWS VPC accepts the connection
+
+resource "mongodbatlas_network_peering" "mongodbatlas_to_vpc_peering" {
+  accepter_region_name   = "${var.aws_region}"
+  project_id             = "${mongodbatlas_project.mongodb_atlas_playlist_project.id}"
+  container_id           = "${mongodbatlas_network_container.spotifydb_playlist_network_container.container_id}"
+  provider_name          = "AWS"
+  vpc_id                 = "${aws_vpc.lambda_to_mongodbatlas_vpc.id}"
+  aws_account_id         = "${data.aws_caller_identity.identity.account_id}"
+  route_table_cidr_block = "${aws_vpc.lambda_to_mongodbatlas_vpc.cidr_block}"
+}
+
+resource "aws_vpc_peering_connection_accepter" "vpc_to_mongodbatlas_peering" {
+  vpc_peering_connection_id = "${mongodbatlas_network_peering.mongodbatlas_to_vpc_peering.connection_id}"
+  auto_accept               = true
+}
+
+resource "aws_security_group" "mongodb_lambda_security_group" {
+  vpc_id = "${aws_vpc.lambda_to_mongodbatlas_vpc.id}"
+
+}
+
+resource "aws_subnet" "lambda_vpc_subnet" {
+  vpc_id = "${aws_vpc.lambda_to_mongodbatlas_vpc.id}"
+  cidr_block = "${aws_vpc.lambda_to_mongodbatlas_vpc.cidr_block}" # This is fine as long as there is only one subnet for the AWS VPC
 }
