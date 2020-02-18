@@ -103,6 +103,60 @@ resource "aws_security_group" "mongodb_lambda_security_group" {
 }
 
 resource "aws_subnet" "lambda_vpc_subnet" {
-  vpc_id = "${aws_vpc.lambda_to_mongodbatlas_vpc.id}"
+  vpc_id     = "${aws_vpc.lambda_to_mongodbatlas_vpc.id}"
   cidr_block = "${aws_vpc.lambda_to_mongodbatlas_vpc.cidr_block}" # This is fine as long as there is only one subnet for the AWS VPC
+}
+
+resource "aws_s3_bucket" "bucket" {
+  bucket = "spotifydb-playlist-lambdas"
+}
+
+
+# resource "aws_lambda_function" "lambda" {
+#   function_name = "spotify-playlist-transform-lambda"
+#   handler       = "main"
+#   runtime       = "go1.x"
+#   role          = "${aws_iam_role.lambda_role.arn}"
+# }
+
+resource "aws_iam_role" "transform_lambda_role" {
+  name               = "spotify-playlist-transform-lambda-role"
+  assume_role_policy = "${data.aws_iam_policy_document.lambda_assume_role_policy.json}"
+}
+
+data "aws_iam_policy_document" "lambda_assume_role_policy" {
+  statement {
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["lambda.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role_policy" "role_execution_policy" {
+  role   = "${aws_iam_role.transform_lambda_role.id}"
+  policy = "${data.aws_iam_policy_document.transform_role_execution_policy_document.json}"
+}
+
+
+data "aws_iam_policy_document" "transform_role_execution_policy_document" {
+  version = "2012-10-17"
+  statement {
+    sid    = "AllowLogs"
+    effect = "Allow"
+    actions = ["logs:CreateLogGroup",
+      "logs:CreateLogStream",
+    "logs:PutLogEvents"]
+    resources = ["arn:aws:logs:*:*:*"]
+  }
+  statement {
+    sid    = "AllowVPCOperations"
+    effect = "Allow"
+    actions = ["ec2:CreateNetworkInterface",
+      "ec2:DescribeNetworkInterfaces",
+    "ec2:DeleteNetworkInterface"]
+    resources = ["*"]
+  }
 }
