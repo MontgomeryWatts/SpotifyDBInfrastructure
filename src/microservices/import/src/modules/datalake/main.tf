@@ -21,6 +21,15 @@ data "aws_iam_policy_document" "bucket_policy_document" {
       identifiers = "${var.producer_arns}"
     }
   }
+  statement {
+    effect    = "Allow"
+    actions   = ["s3:GetObject"]
+    resources = ["arn:aws:s3:::${var.bucket_name}/*"]
+    principals {
+      type        = "AWS"
+      identifiers = "${var.consumer_arns}"
+    }
+  }
 }
 
 

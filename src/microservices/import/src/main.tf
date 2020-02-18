@@ -13,6 +13,16 @@ terraform {
   }
 }
 
+data "terraform_remote_state" "playlist_remote_state" {
+  backend = "s3"
+  config = {
+    bucket  = "spotifydb-remote-state"
+    key     = "microservices/playlist/terraform.tfstate"
+    region  = "${var.aws_region}"
+    profile = "terraform-user"
+  }
+}
+
 locals {
   spotify_environment_variables = {
     SPOTIFY_ID     = "${var.spotify_id}"
@@ -36,6 +46,7 @@ module "datalake" {
   source        = "./modules/datalake"
   bucket_name   = "${var.bucket_name}"
   producer_arns = ["${module.import-entity-lambda.lambda_role_arn}"]
+  consumer_arns = ["${data.terraform_remote_state.playlist_remote_state.outputs.playlist_transform_lambda_role_arn}"]
 }
 
 

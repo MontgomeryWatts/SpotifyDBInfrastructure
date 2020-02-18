@@ -112,12 +112,14 @@ resource "aws_s3_bucket" "bucket" {
 }
 
 
-# resource "aws_lambda_function" "lambda" {
-#   function_name = "spotify-playlist-transform-lambda"
-#   handler       = "main"
-#   runtime       = "go1.x"
-#   role          = "${aws_iam_role.lambda_role.arn}"
-# }
+resource "aws_lambda_function" "lambda" {
+  function_name = "spotify-playlist-transform-lambda"
+  handler       = "main"
+  runtime       = "go1.x"
+  role          = "${aws_iam_role.transform_lambda_role.arn}"
+  s3_bucket     = "${aws_s3_bucket.bucket.id}"
+  s3_key        = "playlist-transform-lambda.zip"
+}
 
 resource "aws_iam_role" "transform_lambda_role" {
   name               = "spotify-playlist-transform-lambda-role"

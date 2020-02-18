@@ -7,3 +7,9 @@ variable "producer_arns" {
   type        = "list"
   description = "The ARNs of the resources to allow PUT access for"
 }
+
+variable "consumer_arns" {
+  type        = "list"
+  description = "The ARNS of resources allowed to GET from the datalake"
+  default     = []
+}
