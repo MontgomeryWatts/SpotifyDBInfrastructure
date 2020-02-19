@@ -1,5 +1,5 @@
 provider "mongodbatlas" {
-  version     = "~> 0.3.1"
+  version     = "~> 0.4.0"
   public_key  = "${var.mongodb_atlas_public_key}"
   private_key = "${var.mongodb_atlas_private_key}"
 }
@@ -48,7 +48,7 @@ resource "mongodbatlas_database_user" "name" {
   username      = "lambda-producer"
   password      = "CHANGEMANUALLYINATLAS"
   project_id    = "${mongodbatlas_project.mongodb_atlas_playlist_project.id}"
-  database_name = "admin"
+  auth_database_name = "admin"
 
   roles {
     role_name     = "readWrite"
@@ -100,6 +100,11 @@ resource "aws_vpc_peering_connection_accepter" "vpc_to_mongodbatlas_peering" {
 resource "aws_security_group" "mongodb_lambda_security_group" {
   vpc_id = "${aws_vpc.lambda_to_mongodbatlas_vpc.id}"
 
+}
+
+resource "mongodbatlas_project_ip_whitelist" "mongodb_whitelist" {
+  project_id         = "${mongodbatlas_project.mongodb_atlas_playlist_project.id}"
+  aws_security_group = "${aws_security_group.mongodb_lambda_security_group.id}"
 }
 
 resource "aws_subnet" "lambda_vpc_subnet" {
