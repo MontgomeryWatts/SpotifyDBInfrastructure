@@ -39,15 +39,15 @@ resource "mongodbatlas_cluster" "mongodb_atlas_playlist_cluster" {
 
   lifecycle { # Can't modify M2 instances in place
     ignore_changes = [
-      provider_region_name, # Atlas formats us-east-1 as US-EAST-1 and terraform tries to change it
+      provider_region_name, # Atlas formats us-east-1 as US_EAST_1 and terraform tries to change it
     ]
   }
 }
 
 resource "mongodbatlas_database_user" "name" {
-  username      = "lambda-producer"
-  password      = "CHANGEMANUALLYINATLAS"
-  project_id    = "${mongodbatlas_project.mongodb_atlas_playlist_project.id}"
+  username           = "lambda-producer"
+  password           = "CHANGEMANUALLYINATLAS"
+  project_id         = "${mongodbatlas_project.mongodb_atlas_playlist_project.id}"
   auth_database_name = "admin"
 
   roles {
@@ -64,7 +64,7 @@ resource "mongodbatlas_network_container" "spotifydb_playlist_network_container"
 
   lifecycle {
     ignore_changes = [
-      region_name, # Atlas formats us-east-1 as US-EAST-1 and terraform tries to change it
+      region_name, # Atlas formats us-east-1 as US_EAST_1 and terraform tries to change it
     ]
   }
 }
@@ -99,7 +99,12 @@ resource "aws_vpc_peering_connection_accepter" "vpc_to_mongodbatlas_peering" {
 
 resource "aws_security_group" "mongodb_lambda_security_group" {
   vpc_id = "${aws_vpc.lambda_to_mongodbatlas_vpc.id}"
-
+  egress {
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+    prefix_list_ids = ["${aws_vpc_endpoint.s3_vpc_endpoint.prefix_list_id}"]
+  }
 }
 
 resource "mongodbatlas_project_ip_whitelist" "mongodb_whitelist" {
@@ -124,6 +129,11 @@ resource "aws_lambda_function" "lambda" {
   role          = "${aws_iam_role.transform_lambda_role.arn}"
   s3_bucket     = "${aws_s3_bucket.bucket.id}"
   s3_key        = "playlist-transform-lambda.zip"
+
+  vpc_config {
+    subnet_ids         = ["${aws_subnet.lambda_vpc_subnet.id}"]
+    security_group_ids = ["${aws_security_group.mongodb_lambda_security_group.id}"]
+  }
 }
 
 resource "aws_iam_role" "transform_lambda_role" {
@@ -166,4 +176,15 @@ data "aws_iam_policy_document" "transform_role_execution_policy_document" {
     "ec2:DeleteNetworkInterface"]
     resources = ["*"]
   }
+}
+
+resource "aws_vpc_endpoint" "s3_vpc_endpoint" {
+  vpc_id            = "${aws_vpc.lambda_to_mongodbatlas_vpc.id}"
+  service_name      = "com.amazonaws.${var.aws_region}.s3"
+  vpc_endpoint_type = "Gateway"
+}
+
+resource "aws_vpc_endpoint_route_table_association" "route_s3_endpoint_to_subnets" {
+  route_table_id  = "${aws_vpc.lambda_to_mongodbatlas_vpc.main_route_table_id}"
+  vpc_endpoint_id = "${aws_vpc_endpoint.s3_vpc_endpoint.id}"
 }
