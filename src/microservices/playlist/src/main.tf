@@ -134,6 +134,12 @@ resource "aws_lambda_function" "lambda" {
     subnet_ids         = ["${aws_subnet.lambda_vpc_subnet.id}"]
     security_group_ids = ["${aws_security_group.mongodb_lambda_security_group.id}"]
   }
+
+  environment {
+    variables = {
+      BUCKET_NAME = "${var.bucket_name}"
+    }
+  }
 }
 
 resource "aws_iam_role" "transform_lambda_role" {

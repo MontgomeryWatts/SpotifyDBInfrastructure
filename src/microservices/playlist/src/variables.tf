@@ -8,6 +8,12 @@ variable "mongodb_atlas_organization_id" {
   description = "The ID of your MongoDB Atlas Organization. Unclear if this should be secret so being safe."
 }
 
+variable "bucket_name" {
+  type = "string"
+  description = "The name of the S3 Bucket to retrieve entities from"
+}
+
+
 
 variable "mongodb_atlas_public_key" {
 
