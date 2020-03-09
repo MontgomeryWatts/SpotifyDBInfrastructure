@@ -19,6 +19,10 @@ terraform {
   }
 }
 
+#################
+# MongoDB Block #
+#################
+
 resource "mongodbatlas_project" "mongodb_atlas_playlist_project" {
   name   = "spotifydb-playlist"
   org_id = "${var.mongodb_atlas_organization_id}"
@@ -56,7 +60,11 @@ resource "mongodbatlas_database_user" "name" {
   }
 }
 
-resource "mongodbatlas_network_container" "spotifydb_playlist_network_container" {
+####################
+# Networking Block #
+####################
+
+resource "mongodbatlas_network_container" "spotifydb_playlist_network_container" { # Synonymous with VPC
   project_id       = "${mongodbatlas_project.mongodb_atlas_playlist_project.id}"
   provider_name    = "AWS"
   atlas_cidr_block = "192.168.0.0/21"
@@ -99,15 +107,28 @@ resource "aws_vpc_peering_connection_accepter" "vpc_to_mongodbatlas_peering" {
 
 resource "aws_security_group" "mongodb_lambda_security_group" {
   vpc_id = "${aws_vpc.lambda_to_mongodbatlas_vpc.id}"
-  egress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
-    prefix_list_ids = ["${aws_vpc_endpoint.s3_vpc_endpoint.prefix_list_id}"]
-  }
 }
 
-resource "mongodbatlas_project_ip_whitelist" "mongodb_whitelist" {
+resource "aws_security_group_rule" "s3_security_group_rule" {
+  type              = "egress"
+  from_port         = 0
+  to_port           = 0
+  protocol          = "-1"
+  security_group_id = "${aws_security_group.mongodb_lambda_security_group.id}"
+  prefix_list_ids   = ["${aws_vpc_endpoint.s3_vpc_endpoint.prefix_list_id}"]
+}
+
+resource "aws_security_group_rule" "mongo_security_group_rule" {
+  type              = "egress"
+  from_port         = 27017
+  to_port           = 27017
+  protocol          = "tcp"
+  security_group_id = "${aws_security_group.mongodb_lambda_security_group.id}"
+  cidr_blocks       = ["${mongodbatlas_network_container.spotifydb_playlist_network_container.atlas_cidr_block}"]
+}
+
+
+resource "mongodbatlas_project_ip_whitelist" "mongodb_whitelist" { # Whitelist the above security group in MongoDB Atlas
   project_id         = "${mongodbatlas_project.mongodb_atlas_playlist_project.id}"
   aws_security_group = "${aws_security_group.mongodb_lambda_security_group.id}"
 }
@@ -116,6 +137,34 @@ resource "aws_subnet" "lambda_vpc_subnet" {
   vpc_id     = "${aws_vpc.lambda_to_mongodbatlas_vpc.id}"
   cidr_block = "${aws_vpc.lambda_to_mongodbatlas_vpc.cidr_block}" # This is fine as long as there is only one subnet for the AWS VPC
 }
+
+resource "aws_route_table_association" "a" {
+  subnet_id      = "${aws_subnet.lambda_vpc_subnet.id}"
+  route_table_id = "${aws_vpc.lambda_to_mongodbatlas_vpc.main_route_table_id}"
+}
+
+
+resource "aws_vpc_endpoint" "s3_vpc_endpoint" { # Endpoint to allow Lambdas to access S3
+  vpc_id            = "${aws_vpc.lambda_to_mongodbatlas_vpc.id}"
+  service_name      = "com.amazonaws.${var.aws_region}.s3"
+  vpc_endpoint_type = "Gateway"
+}
+
+resource "aws_vpc_endpoint_route_table_association" "route_s3_endpoint_to_subnets" { # Connect endpoint and route table
+  route_table_id  = "${aws_vpc.lambda_to_mongodbatlas_vpc.main_route_table_id}"
+  vpc_endpoint_id = "${aws_vpc_endpoint.s3_vpc_endpoint.id}"
+}
+
+resource "aws_route" "route_to_mongo" {
+  route_table_id            = "${aws_vpc.lambda_to_mongodbatlas_vpc.main_route_table_id}"
+  destination_cidr_block    = "${mongodbatlas_network_container.spotifydb_playlist_network_container.atlas_cidr_block}"
+  vpc_peering_connection_id = "${mongodbatlas_network_peering.mongodbatlas_to_vpc_peering.connection_id}"
+}
+
+
+#############
+# AWS Block #
+#############
 
 resource "aws_s3_bucket" "bucket" {
   bucket = "spotifydb-playlist-lambdas"
@@ -128,6 +177,7 @@ resource "aws_lambda_function" "lambda" {
   runtime       = "go1.x"
   role          = "${aws_iam_role.transform_lambda_role.arn}"
   s3_bucket     = "${aws_s3_bucket.bucket.id}"
+  timeout       = "10"
   s3_key        = "playlist-transform-lambda.zip"
 
   vpc_config {
@@ -182,15 +232,4 @@ data "aws_iam_policy_document" "transform_role_execution_policy_document" {
     "ec2:DeleteNetworkInterface"]
     resources = ["*"]
   }
-}
-
-resource "aws_vpc_endpoint" "s3_vpc_endpoint" {
-  vpc_id            = "${aws_vpc.lambda_to_mongodbatlas_vpc.id}"
-  service_name      = "com.amazonaws.${var.aws_region}.s3"
-  vpc_endpoint_type = "Gateway"
-}
-
-resource "aws_vpc_endpoint_route_table_association" "route_s3_endpoint_to_subnets" {
-  route_table_id  = "${aws_vpc.lambda_to_mongodbatlas_vpc.main_route_table_id}"
-  vpc_endpoint_id = "${aws_vpc_endpoint.s3_vpc_endpoint.id}"
 }

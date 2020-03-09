@@ -9,7 +9,7 @@ variable "mongodb_atlas_organization_id" {
 }
 
 variable "bucket_name" {
-  type = "string"
+  type        = "string"
   description = "The name of the S3 Bucket to retrieve entities from"
 }
 
