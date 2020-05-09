@@ -13,6 +13,9 @@ variable "bucket_name" {
   description = "The name of the S3 Bucket to retrieve entities from"
 }
 
+variable "mongodb_uri" {
+  type = "string"
+}
 
 
 variable "mongodb_atlas_public_key" {

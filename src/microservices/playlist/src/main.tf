@@ -34,11 +34,10 @@ resource "mongodbatlas_cluster" "mongodb_atlas_playlist_cluster" {
 
   mongo_db_major_version       = "4.0"
   disk_size_gb                 = "2"
-  auto_scaling_disk_gb_enabled = false # cannot use autoscaling on shared clusters (such as M2)
+  auto_scaling_disk_gb_enabled = false
 
-  provider_name               = "TENANT" # Need to specify tenant to use M2
-  backing_provider_name       = "AWS"
-  provider_instance_size_name = "M2"
+  provider_name               = "AWS"
+  provider_instance_size_name = "M10"
   provider_region_name        = "${var.aws_region}"
 
   lifecycle { # Can't modify M2 instances in place
@@ -109,6 +108,15 @@ resource "aws_security_group" "mongodb_lambda_security_group" {
   vpc_id = "${aws_vpc.lambda_to_mongodbatlas_vpc.id}"
 }
 
+resource "aws_security_group_rule" "mongodb_inbound_rule" {
+  type              = "ingress"
+  from_port         = 443
+  to_port           = 443
+  protocol          = "tcp"
+  security_group_id = "${aws_security_group.mongodb_lambda_security_group.id}"
+  cidr_blocks       = ["${mongodbatlas_network_container.spotifydb_playlist_network_container.atlas_cidr_block}"]
+}
+
 resource "aws_security_group_rule" "s3_security_group_rule" {
   type              = "egress"
   from_port         = 0
@@ -118,9 +126,9 @@ resource "aws_security_group_rule" "s3_security_group_rule" {
   prefix_list_ids   = ["${aws_vpc_endpoint.s3_vpc_endpoint.prefix_list_id}"]
 }
 
-resource "aws_security_group_rule" "mongo_security_group_rule" {
+resource "aws_security_group_rule" "mongodb_outbound_rule" {
   type              = "egress"
-  from_port         = 27017
+  from_port         = 27015
   to_port           = 27017
   protocol          = "tcp"
   security_group_id = "${aws_security_group.mongodb_lambda_security_group.id}"
@@ -188,6 +196,7 @@ resource "aws_lambda_function" "lambda" {
   environment {
     variables = {
       BUCKET_NAME = "${var.bucket_name}"
+      MONGODB_URI = "${var.mongodb_uri}"
     }
   }
 }
