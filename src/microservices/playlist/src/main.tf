@@ -19,6 +19,16 @@ terraform {
   }
 }
 
+data "terraform_remote_state" "import_remote_state" {
+  backend = "s3"
+  config = {
+    bucket  = "spotifydb-remote-state"
+    key     = "microservices/import/terraform.tfstate"
+    region  = "${var.aws_region}"
+    profile = "terraform-user"
+  }
+}
+
 #################
 # MongoDB Block #
 #################
@@ -241,4 +251,52 @@ data "aws_iam_policy_document" "transform_role_execution_policy_document" {
     "ec2:DeleteNetworkInterface"]
     resources = ["*"]
   }
+  statement {
+    sid    = "AllowSQSOperations"
+    effect = "Allow"
+    actions = ["sqs:ReceiveMessage",
+      "sqs:DeleteMessage",
+    "sqs:GetQueueAttributes"]
+    resources = ["${aws_sqs_queue.spotifydb_playlist_sqs.arn}"]
+  }
+}
+
+resource "aws_sqs_queue" "spotifydb_playlist_sqs" {
+
+}
+
+resource "aws_sqs_queue_policy" "sqs_policy" {
+  queue_url = "${aws_sqs_queue.spotifydb_playlist_sqs.id}"
+  policy    = "${data.aws_iam_policy_document.queue_policy_document.json}"
+}
+
+data "aws_iam_policy_document" "queue_policy_document" {
+  version = "2012-10-17"
+  statement {
+    effect    = "Allow"
+    actions   = ["sqs:SendMessage"]
+    resources = ["${aws_sqs_queue.spotifydb_playlist_sqs.arn}"]
+    principals {
+      type        = "AWS"
+      identifiers = ["*"]
+    }
+    condition {
+      test     = "ArnEquals"
+      variable = "aws:SourceArn"
+      values   = ["${data.terraform_remote_state.import_remote_state.outputs.import_sns_topic_arn}"]
+    }
+  }
+}
+
+resource "aws_sns_topic_subscription" "subscribe_lambda_to_sns" {
+  topic_arn            = "${data.terraform_remote_state.import_remote_state.outputs.import_sns_topic_arn}"
+  protocol             = "sqs"
+  endpoint             = "${aws_sqs_queue.spotifydb_playlist_sqs.arn}"
+  raw_message_delivery = true
+}
+
+resource "aws_lambda_event_source_mapping" "trigger_lambda_from_sqs" {
+  event_source_arn = "${aws_sqs_queue.spotifydb_playlist_sqs.arn}"
+  function_name    = "${aws_lambda_function.lambda.arn}"
+  batch_size       = 5
 }
