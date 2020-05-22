@@ -55,12 +55,16 @@ module "import-orchestration-topic" {
   publisher_arns = ["${module.fan-out-lambda.lambda_role_arn}"]
 }
 
+module "dynamodb-tracking-table" {
+  source = "./modules/dynamodb"
+}
+
 module "fan-out-lambda" {
   source                         = "./modules/lambda"
   lambda_name                    = "spotifydb-import-fan-out-lambda"
   lambda_file_name               = "fan-out-lambda.zip"
   handler_name                   = "main"
-  lambda_timeout_seconds         = "5"
+  lambda_timeout_seconds         = "25"
   lambda_runtime                 = "go1.x"
   lambda_memory_size             = "128"
   messages_per_lambda_invocation = "1"
