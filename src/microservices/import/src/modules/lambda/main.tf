@@ -74,6 +74,7 @@ resource "aws_lambda_event_source_mapping" "trigger_lambda_from_sqs" {
 
 
 resource "aws_sqs_queue" "sqs" {
+  name                       = "${var.lambda_name}Queue"
   visibility_timeout_seconds = local.sqs_visibility_timeout_seconds
   receive_wait_time_seconds  = 20
 }

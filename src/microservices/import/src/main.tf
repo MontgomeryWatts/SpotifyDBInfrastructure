@@ -65,10 +65,10 @@ module "fan-out-lambda" {
   lambda_name                    = "spotifydb-import-fan-out-lambda"
   lambda_file_name               = "fan-out-lambda.zip"
   handler_name                   = "main"
-  lambda_timeout_seconds         = "25"
+  lambda_timeout_seconds         = 60
   lambda_runtime                 = "go1.x"
-  lambda_memory_size             = "128"
-  messages_per_lambda_invocation = "1"
+  lambda_memory_size             = 128
+  messages_per_lambda_invocation = 1
   lambda_environment_variables   = local.fan_out_environment_variables
   entity_types                   = ["artist"]
   source_bucket_name             = aws_s3_bucket.bucket.id
@@ -81,10 +81,10 @@ module "import-entity-lambda" {
   lambda_name                    = "spotifydb-import-entity-lambda"
   lambda_file_name               = "import-entity-lambda.zip"
   handler_name                   = "main"
-  lambda_timeout_seconds         = "10"
+  lambda_timeout_seconds         = 10
   lambda_runtime                 = "go1.x"
-  lambda_memory_size             = "128"
-  messages_per_lambda_invocation = "10"
+  lambda_memory_size             = 128
+  messages_per_lambda_invocation = 10
   lambda_environment_variables   = local.import_environment_variables
   entity_types                   = ["album", "artist"]
   source_bucket_name             = aws_s3_bucket.bucket.id
