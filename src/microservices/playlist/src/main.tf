@@ -262,11 +262,11 @@ data "aws_iam_policy_document" "transform_role_execution_policy_document" {
 }
 
 resource "aws_sqs_queue" "spotifydb_playlist_sqs" {
-
+  name = "SpotifyDB-Playlist-Transform-Queue"
 }
 
 resource "aws_sqs_queue_policy" "sqs_policy" {
-  queue_url = "${aws_sqs_queue.spotifydb_playlist_sqs.id}"
+  queue_url = aws_sqs_queue.spotifydb_playlist_sqs.id
   policy    = "${data.aws_iam_policy_document.queue_policy_document.json}"
 }
 

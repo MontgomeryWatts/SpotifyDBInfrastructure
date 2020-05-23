@@ -1,7 +1,7 @@
 provider "aws" {
   version = "~> 2.0"
   profile = "terraform-user"
-  region  = "${var.aws_region}"
+  region  = var.aws_region
 }
 
 terraform {
@@ -18,23 +18,24 @@ data "terraform_remote_state" "playlist_remote_state" {
   config = {
     bucket  = "spotifydb-remote-state"
     key     = "microservices/playlist/terraform.tfstate"
-    region  = "${var.aws_region}"
+    region  = var.aws_region
     profile = "terraform-user"
   }
 }
 
 locals {
   spotify_environment_variables = {
-    SPOTIFY_ID     = "${var.spotify_id}"
-    SPOTIFY_SECRET = "${var.spotify_secret}"
+    SPOTIFY_ID     = var.spotify_id
+    SPOTIFY_SECRET = var.spotify_secret
+    TABLE_NAME     = "TrackingTable"
   }
-  import_environment_variables = "${merge(local.spotify_environment_variables, {
-    BUCKET_NAME = "${var.bucket_name}"
-  })}"
+  import_environment_variables = merge(local.spotify_environment_variables, {
+    BUCKET_NAME = var.bucket_name
+  })
 
-  fan_out_environment_variables = "${merge(local.spotify_environment_variables, {
-    TOPIC_ARN = "${module.import-orchestration-topic.sns_topic_arn}"
-  })}"
+  fan_out_environment_variables = merge(local.spotify_environment_variables, {
+    TOPIC_ARN = module.import-orchestration-topic.sns_topic_arn
+  })
 }
 
 
@@ -44,9 +45,9 @@ resource "aws_s3_bucket" "bucket" {
 
 module "datalake" {
   source        = "./modules/datalake"
-  bucket_name   = "${var.bucket_name}"
-  producer_arns = ["${module.import-entity-lambda.lambda_role_arn}"]
-  consumer_arns = ["${data.terraform_remote_state.playlist_remote_state.outputs.playlist_transform_lambda_role_arn}"]
+  bucket_name   = var.bucket_name
+  producer_arns = [module.import-entity-lambda.lambda_role_arn]
+  consumer_arns = [data.terraform_remote_state.playlist_remote_state.outputs.playlist_transform_lambda_role_arn]
 }
 
 
@@ -68,10 +69,11 @@ module "fan-out-lambda" {
   lambda_runtime                 = "go1.x"
   lambda_memory_size             = "128"
   messages_per_lambda_invocation = "1"
-  lambda_environment_variables   = "${local.fan_out_environment_variables}"
+  lambda_environment_variables   = local.fan_out_environment_variables
   entity_types                   = ["artist"]
-  source_bucket_name             = "${aws_s3_bucket.bucket.id}"
-  sns_topic_arn                  = "${module.import-orchestration-topic.sns_topic_arn}"
+  source_bucket_name             = aws_s3_bucket.bucket.id
+  dynamodb_table_arn             = module.dynamodb-tracking-table.tracking_table_arn
+  sns_topic_arn                  = module.import-orchestration-topic.sns_topic_arn
 }
 
 module "import-entity-lambda" {
@@ -83,8 +85,9 @@ module "import-entity-lambda" {
   lambda_runtime                 = "go1.x"
   lambda_memory_size             = "128"
   messages_per_lambda_invocation = "10"
-  lambda_environment_variables   = "${local.import_environment_variables}"
+  lambda_environment_variables   = local.import_environment_variables
   entity_types                   = ["album", "artist"]
-  source_bucket_name             = "${aws_s3_bucket.bucket.id}"
-  sns_topic_arn                  = "${module.import-orchestration-topic.sns_topic_arn}"
+  source_bucket_name             = aws_s3_bucket.bucket.id
+  dynamodb_table_arn             = module.dynamodb-tracking-table.tracking_table_arn
+  sns_topic_arn                  = module.import-orchestration-topic.sns_topic_arn
 }

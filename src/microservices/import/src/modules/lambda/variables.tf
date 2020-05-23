@@ -13,6 +13,12 @@ variable "handler_name" {
   description = "The name of the handler for the AWS Lambda to call"
 }
 
+variable "dynamodb_table_arn" {
+  type        = "string"
+  description = "The ARN of the DynamoDB table used to track updates"
+}
+
+
 variable "sns_topic_arn" {
   type        = "string"
   description = "The ARN of the SNS topic that orchestrates the import process"
