@@ -16,7 +16,23 @@ variable "remote_state_bucket_name" {
   default     = "spotifydb-remote-state"
 }
 
+variable "datalake_bucket_name" {
+  type        = "string"
+  description = "The name of the S3 bucket that acts as the datalake"
+  default     = "spotifydb-datalake"
+}
+
 variable "terraform_arn" {
   type        = "string"
   description = "The ARN of the terraform user to access the remote backend"
+}
+
+variable "spotify_id" {
+  type        = "string"
+  description = "The (secret) client id required to connect to Spotify"
+}
+
+variable "spotify_secret" {
+  type        = "string"
+  description = "The client secret required to connect to Spotify"
 }
