@@ -18,7 +18,7 @@ data "aws_iam_policy_document" "datalake_bucket_policy_document" {
     resources = ["arn:aws:s3:::${var.datalake_bucket_name}/*"]
     principals {
       type        = "AWS"
-      identifiers = [aws_lambda_function.import_entity_lambda.arn]
+      identifiers = [aws_iam_role.import_entity_lambda_role.arn]
     }
   }
   statement {
@@ -27,7 +27,7 @@ data "aws_iam_policy_document" "datalake_bucket_policy_document" {
     resources = ["arn:aws:s3:::${var.datalake_bucket_name}/*"]
     principals {
       type        = "AWS"
-      identifiers = [] # This will be the playlist transform lambda
+      identifiers = [aws_iam_role.playlist_transform_lambda_role.arn]
     }
   }
 }

@@ -36,3 +36,20 @@ variable "spotify_secret" {
   type        = "string"
   description = "The client secret required to connect to Spotify"
 }
+
+variable "mongodb_atlas_public_key" {
+  type = "string"
+}
+
+variable "mongodb_atlas_private_key" {
+  type = "string"
+}
+
+variable "mongodb_atlas_organization_id" {
+  description = "The ID of your MongoDB Atlas Organization. Unclear if this should be secret so being safe."
+}
+
+variable "mongodb_uri" {
+  type = "string"
+  description = "The URI to connect to MongoDB Atlas with"
+}

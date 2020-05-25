@@ -22,8 +22,8 @@ resource "aws_sns_topic" "import_data_topic" {
 }
 
 resource "aws_dynamodb_table" "import_tracking_table" {
-  name           = "TrackingTable"
-  billing_mode   = "PAY_PER_REQUEST"
+  name         = "TrackingTable"
+  billing_mode = "PAY_PER_REQUEST"
 
   hash_key = "EntityURI"
 
@@ -42,7 +42,7 @@ data "aws_iam_policy_document" "import_topic_policy_document" {
     resources = [aws_sns_topic.import_data_topic.arn]
     principals {
       type        = "AWS"
-      identifiers = [aws_lambda_function.import_fan_out_lambda.arn]
+      identifiers = [aws_iam_role.import_fan_out_lambda_role.arn]
     }
   }
 }
@@ -78,16 +78,6 @@ resource "aws_iam_role" "import_entity_lambda_role" {
   assume_role_policy = data.aws_iam_policy_document.lambda_assume_role_policy.json
 }
 
-data "aws_iam_policy_document" "lambda_assume_role_policy" {
-  statement {
-    actions = ["sts:AssumeRole"]
-
-    principals {
-      type        = "Service"
-      identifiers = ["lambda.amazonaws.com"]
-    }
-  }
-}
 
 resource "aws_iam_role_policy" "import_entity_lambda_role_execution_policy" {
   role   = aws_iam_role.import_entity_lambda_role.id
