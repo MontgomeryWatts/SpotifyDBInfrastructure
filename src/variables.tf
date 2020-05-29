@@ -50,6 +50,6 @@ variable "mongodb_atlas_organization_id" {
 }
 
 variable "mongodb_uri" {
-  type = "string"
+  type        = "string"
   description = "The URI to connect to MongoDB Atlas with"
 }

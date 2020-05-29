@@ -83,6 +83,8 @@ resource "aws_security_group" "mongodb_playlist_lambda_security_group" {
   vpc_id = aws_vpc.playlist_lambda_to_mongodbatlas_vpc.id
 }
 
+
+
 resource "aws_security_group_rule" "mongodb_inbound_rule" {
   type              = "ingress"
   from_port         = 443
@@ -118,7 +120,7 @@ resource "mongodbatlas_project_ip_whitelist" "mongodb_playlist_whitelist" { # Wh
 
 resource "aws_subnet" "playlist_lambda_vpc_subnet" {
   vpc_id     = aws_vpc.playlist_lambda_to_mongodbatlas_vpc.id
-  cidr_block = aws_vpc.playlist_lambda_to_mongodbatlas_vpc.cidr_block # This is fine as long as there is only one subnet for the AWS VPC
+  cidr_block = aws_vpc.playlist_lambda_to_mongodbatlas_vpc.cidr_block
 }
 
 resource "aws_route_table_association" "playlist_lambda_subnet_association" {
@@ -173,6 +175,60 @@ resource "aws_lambda_function" "playlist_tranform_lambda" {
       BUCKET_NAME = var.datalake_bucket_name
       MONGODB_URI = var.mongodb_uri
     }
+  }
+}
+
+resource "aws_lambda_function" "playlist_api_lambda" {
+  function_name = "spotify-playlist-api-lambda"
+  handler       = "main"
+  runtime       = "go1.x"
+  role          = aws_iam_role.playlist_api_lambda_role.arn
+  s3_bucket     = aws_s3_bucket.playlist_source_code_bucket.id
+  timeout       = 10
+  s3_key        = "playlist-api-lambda.zip"
+
+  vpc_config {
+    subnet_ids         = [aws_subnet.playlist_lambda_vpc_subnet.id]
+    security_group_ids = [aws_security_group.mongodb_playlist_lambda_security_group.id]
+  }
+
+  environment {
+    variables = {
+      MONGODB_URI    = var.mongodb_uri
+      SPOTIFY_ID     = var.spotify_id
+      SPOTIFY_SECRET = var.spotify_secret
+    }
+  }
+}
+
+resource "aws_iam_role" "playlist_api_lambda_role" {
+  name               = "spotify-playlist-api-lambda-role"
+  assume_role_policy = data.aws_iam_policy_document.lambda_assume_role_policy.json
+}
+
+resource "aws_iam_role_policy" "playlist_api_role_execution_policy" {
+  role   = aws_iam_role.playlist_api_lambda_role.id
+  policy = data.aws_iam_policy_document.playlist_api_role_execution_policy_document.json
+}
+
+
+data "aws_iam_policy_document" "playlist_api_role_execution_policy_document" {
+  version = "2012-10-17"
+  statement {
+    sid    = "AllowLogs"
+    effect = "Allow"
+    actions = ["logs:CreateLogGroup",
+      "logs:CreateLogStream",
+    "logs:PutLogEvents"]
+    resources = ["arn:aws:logs:*:*:*"]
+  }
+  statement {
+    sid    = "AllowVPCOperations"
+    effect = "Allow"
+    actions = ["ec2:CreateNetworkInterface",
+      "ec2:DescribeNetworkInterfaces",
+    "ec2:DeleteNetworkInterface"]
+    resources = ["*"]
   }
 }
 
