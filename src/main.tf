@@ -1,5 +1,5 @@
 provider "aws" {
-  version = "~> 2.0"
+  version = "2.31.0"
   profile = "terraform-user"
   region  = var.aws_region
 }
