@@ -62,12 +62,12 @@ resource "aws_lambda_function" "import_entity_lambda" {
   s3_bucket                      = aws_s3_bucket.import_source_code_bucket.id
   s3_key                         = "import-entity-lambda.zip"
   function_name                  = "spotifydb-import-entity-lambda"
-  memory_size                    = 512
+  memory_size                    = 128
   handler                        = "main"
   runtime                        = "go1.x"
   role                           = aws_iam_role.import_entity_lambda_role.arn
   timeout                        = 15
-  reserved_concurrent_executions = 1
+  reserved_concurrent_executions = 5
 
   environment {
     variables = local.import_environment_variables
@@ -164,12 +164,12 @@ resource "aws_lambda_function" "import_fan_out_lambda" {
   s3_bucket                      = aws_s3_bucket.import_source_code_bucket.id
   s3_key                         = "import-entity-lambda.zip"
   function_name                  = "spotifydb-import-fan-out-lambda"
-  memory_size                    = 512
+  memory_size                    = 128
   handler                        = "main"
   runtime                        = "go1.x"
   role                           = aws_iam_role.import_fan_out_lambda_role.arn
   timeout                        = 120
-  reserved_concurrent_executions = 1
+  reserved_concurrent_executions = 0
 
   environment {
     variables = local.fan_out_environment_variables

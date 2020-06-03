@@ -36,7 +36,6 @@ data "aws_iam_policy_document" "main_bucket_policy_document" {
   }
 }
 
-
 resource "aws_s3_bucket_policy" "main_bucket_policy" {
   bucket = aws_s3_bucket.main_bucket.id
   policy = data.aws_iam_policy_document.main_bucket_policy_document.json
@@ -54,6 +53,19 @@ resource "aws_cloudfront_distribution" "cloudfront" {
     origin_id   = "S3-${var.site_url}"
   }
 
+  origin {
+    domain_name = "${aws_api_gateway_rest_api.spotifydb_api.id}.execute-api.${var.aws_region}.amazonaws.com"
+    origin_id   = "API-Gateway"
+    origin_path = "/${aws_api_gateway_deployment.spotifydb_deployment.stage_name}"
+
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "https-only"
+      origin_ssl_protocols   = ["TLSv1"]
+    }
+  }
+
   wait_for_deployment = false
   enabled             = true
   is_ipv6_enabled     = true
@@ -65,6 +77,29 @@ resource "aws_cloudfront_distribution" "cloudfront" {
     allowed_methods  = ["GET", "HEAD", "OPTIONS"]
     cached_methods   = ["GET", "HEAD"]
     target_origin_id = "S3-${var.site_url}"
+
+    forwarded_values {
+      query_string = false
+
+      cookies {
+        forward = "none"
+      }
+    }
+
+    min_ttl     = 0
+    default_ttl = 86400
+    max_ttl     = 31536000
+
+    compress               = true
+    viewer_protocol_policy = "redirect-to-https"
+  }
+
+  ordered_cache_behavior {
+    path_pattern = "api/*"
+
+    allowed_methods  = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "API-Gateway"
 
     forwarded_values {
       query_string = false
