@@ -1,17 +1,26 @@
+locals {
+  aws_vpc_tags = {
+    "Name" = "EC2 MongoDB Atlas VPC"
+  }
+}
+
 resource "aws_vpc" "ec2_to_mongodbatlas_vpc" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_hostnames = true
   enable_dns_support   = true
   instance_tenancy     = "default"
+  tags                 = local.aws_vpc_tags
 }
 
 resource "aws_vpc_peering_connection_accepter" "ec2_vpc_to_mongodbatlas_peering" {
   vpc_peering_connection_id = mongodbatlas_network_peering.mongodbatlas_to_ec2_vpc_peering.connection_id
   auto_accept               = true
+  tags                      = local.aws_vpc_tags
 }
 
 resource "aws_security_group" "ec2_to_mongodbatlas_sg" {
   vpc_id = aws_vpc.ec2_to_mongodbatlas_vpc.id
+  tags   = local.aws_vpc_tags
 }
 
 resource "aws_security_group_rule" "mongodb_inbound_rule" {
@@ -32,13 +41,13 @@ resource "aws_security_group_rule" "mongodb_outbound_rule" {
   cidr_blocks       = [mongodbatlas_network_container.sampler_network_container.atlas_cidr_block]
 }
 
-resource "aws_subnet" "playlist_lambda_vpc_subnet" {
+resource "aws_subnet" "ec2_mongodbatlas_subnet" {
   vpc_id     = aws_vpc.ec2_to_mongodbatlas_vpc.id
   cidr_block = aws_vpc.ec2_to_mongodbatlas_vpc.cidr_block
 }
 
-resource "aws_route_table_association" "playlist_lambda_subnet_association" {
-  subnet_id      = aws_subnet.playlist_lambda_vpc_subnet.id
+resource "aws_route_table_association" "ec2_mongodbatlas_subnet_association" {
+  subnet_id      = aws_subnet.ec2_mongodbatlas_subnet.id
   route_table_id = aws_vpc.ec2_to_mongodbatlas_vpc.main_route_table_id
 }
 

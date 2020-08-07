@@ -53,5 +53,5 @@ resource "mongodbatlas_network_peering" "mongodbatlas_to_ec2_vpc_peering" {
 resource "mongodbatlas_project_ip_whitelist" "mongodb_whitelist" {
   project_id         = mongodbatlas_project.mongodb_atlas_sampler_project.id
   aws_security_group = aws_security_group.ec2_to_mongodbatlas_sg.id
-  depends_on = [mongodbatlas_network_peering.mongodbatlas_to_ec2_vpc_peering]
+  depends_on         = [mongodbatlas_network_peering.mongodbatlas_to_ec2_vpc_peering]
 }
