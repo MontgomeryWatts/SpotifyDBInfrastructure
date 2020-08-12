@@ -50,8 +50,8 @@ resource "mongodbatlas_network_peering" "mongodbatlas_to_ec2_vpc_peering" {
   route_table_cidr_block = aws_vpc.ec2_to_mongodbatlas_vpc.cidr_block
 }
 
-resource "mongodbatlas_project_ip_whitelist" "mongodb_whitelist" {
+resource "mongodbatlas_project_ip_whitelist" "mongodb_whitelist_container_sg" {
   project_id         = mongodbatlas_project.mongodb_atlas_sampler_project.id
-  aws_security_group = aws_security_group.ec2_to_mongodbatlas_sg.id
+  aws_security_group = aws_security_group.container_sg.id
   depends_on         = [mongodbatlas_network_peering.mongodbatlas_to_ec2_vpc_peering]
 }

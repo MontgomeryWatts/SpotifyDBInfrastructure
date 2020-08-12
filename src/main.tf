@@ -22,3 +22,7 @@ terraform {
 data "aws_caller_identity" "identity" {
 
 }
+
+data "aws_availability_zones" "available" {
+  state = "available"
+}
