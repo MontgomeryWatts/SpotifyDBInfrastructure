@@ -26,13 +26,8 @@ resource "aws_ecs_service" "sampler_web_server_service" {
   }
 }
 
-data "template_file" "task_definition_template" {
-  template = file("task-definitions/service.json.tpl")
-  vars = {
-    mongodb_uri        = var.mongodb_uri
-    aws_ecr_repository = aws_ecr_repository.spotify_sampler_repository.repository_url
-    tag                = "latest"
-  }
+resource "aws_cloudwatch_log_group" "ecs_task_log_group" {
+  name = "spotify-sampler-log-group"
 }
 
 resource "aws_ecs_task_definition" "spotify_sampler_task_definition" {
@@ -42,5 +37,40 @@ resource "aws_ecs_task_definition" "spotify_sampler_task_definition" {
   cpu                      = 512
   memory                   = 1024
   requires_compatibilities = ["FARGATE"]
-  container_definitions    = data.template_file.task_definition_template.rendered
+  container_definitions    = <<TASK_DEFINITION
+  [
+    {
+      "name": "web-server",
+      "image": "${aws_ecr_repository.spotify_sampler_repository.repository_url}:latest",
+      "essential": true,
+      "cpu": 512,
+      "memory": null,
+      "logConfiguration": {
+      "logDriver": "awslogs",
+        "options": {
+          "awslogs-region": "${var.aws_region}",
+          "awslogs-stream-prefix": "web-server",
+          "awslogs-group": "${aws_cloudwatch_log_group.ecs_task_log_group.name}"
+        }
+      },
+      "portMappings": [
+        {
+          "containerPort": 80,
+          "hostPort": 80,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "MONGODB_URI",
+          "value": "${var.mongodb_uri}"
+        },
+        {
+          "name": "PORT",
+          "value": "80"
+        }
+      ]
+    }
+]
+TASK_DEFINITION
 }
