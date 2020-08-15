@@ -3,6 +3,8 @@
     "name": "web-server",
     "image": "${aws_ecr_repository}:${tag}",
     "essential": true,
+    "cpu": 512,
+    "memory": null,
     "portMappings": [
       {
         "containerPort": 80,
@@ -14,6 +16,10 @@
       {
         "name": "MONGODB_URI",
         "value": "${mongodb_uri}"
+      },
+      {
+        "name": "PORT",
+        "value": "80"
       }
     ]
   }
