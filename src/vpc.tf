@@ -141,4 +141,3 @@ resource "aws_route" "route_to_load_balancer_igw" {
   destination_cidr_block = "0.0.0.0/0"
   gateway_id             = aws_internet_gateway.load_balancer_igw.id
 }
-

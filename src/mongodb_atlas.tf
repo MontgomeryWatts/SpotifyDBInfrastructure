@@ -8,6 +8,13 @@ resource "mongodbatlas_project" "mongodb_atlas_sampler_project" {
   org_id = var.mongodb_atlas_organization_id
 }
 
+resource "mongodbatlas_network_container" "sampler_network_container" {
+  project_id       = mongodbatlas_project.mongodb_atlas_sampler_project.id
+  provider_name    = "AWS"
+  atlas_cidr_block = "192.168.0.0/21"
+  region_name      = local.mongodb_atlas_region
+}
+
 resource "mongodbatlas_cluster" "sampler_for_spotify_cluster" {
   name       = "sampler-for-spotify-cluster"
   project_id = mongodbatlas_project.mongodb_atlas_sampler_project.id
@@ -19,6 +26,8 @@ resource "mongodbatlas_cluster" "sampler_for_spotify_cluster" {
   provider_name               = "AWS"
   provider_instance_size_name = "M10"
   provider_region_name        = local.mongodb_atlas_region
+
+  depends_on = [mongodbatlas_network_container.sampler_network_container]
 }
 
 resource "mongodbatlas_database_user" "read_only_user" {
@@ -31,13 +40,6 @@ resource "mongodbatlas_database_user" "read_only_user" {
     role_name     = "read"
     database_name = "spotify_sampler"
   }
-}
-
-resource "mongodbatlas_network_container" "sampler_network_container" {
-  project_id       = mongodbatlas_project.mongodb_atlas_sampler_project.id
-  provider_name    = "AWS"
-  atlas_cidr_block = "192.168.0.0/21"
-  region_name      = local.mongodb_atlas_region
 }
 
 resource "mongodbatlas_network_peering" "mongodbatlas_to_ec2_vpc_peering" {

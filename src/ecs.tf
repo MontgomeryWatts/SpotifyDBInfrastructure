@@ -43,10 +43,8 @@ resource "aws_ecs_task_definition" "spotify_sampler_task_definition" {
       "name": "web-server",
       "image": "${aws_ecr_repository.spotify_sampler_repository.repository_url}:latest",
       "essential": true,
-      "cpu": 512,
-      "memory": null,
       "logConfiguration": {
-      "logDriver": "awslogs",
+        "logDriver": "awslogs",
         "options": {
           "awslogs-region": "${var.aws_region}",
           "awslogs-stream-prefix": "web-server",
@@ -56,7 +54,22 @@ resource "aws_ecs_task_definition" "spotify_sampler_task_definition" {
       "portMappings": [
         {
           "containerPort": 80,
-          "hostPort": 80,
+          "protocol": "tcp"
+        },
+        {
+          "containerPort": 443,
+          "protocol": "tcp"
+        },
+        {
+          "containerPort": 27015,
+          "protocol": "tcp"
+        },
+        {
+          "containerPort": 27016,
+          "protocol": "tcp"
+        },
+        {
+          "containerPort": 27017,
           "protocol": "tcp"
         }
       ],
