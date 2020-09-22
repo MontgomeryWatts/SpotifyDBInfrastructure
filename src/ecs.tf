@@ -7,11 +7,12 @@ resource "aws_ecs_cluster" "spotify_sampler_cluster" {
 }
 
 resource "aws_ecs_service" "sampler_web_server_service" {
-  name            = "spotify_sampler_service"
-  cluster         = aws_ecs_cluster.spotify_sampler_cluster.id
-  task_definition = aws_ecs_task_definition.spotify_sampler_task_definition.arn
-  desired_count   = 1
-  launch_type     = "FARGATE"
+  name                               = "spotify_sampler_service"
+  cluster                            = aws_ecs_cluster.spotify_sampler_cluster.id
+  task_definition                    = aws_ecs_task_definition.spotify_sampler_task_definition.arn
+  desired_count                      = 2
+  deployment_minimum_healthy_percent = 50
+  launch_type                        = "FARGATE"
 
   network_configuration {
     subnets          = aws_subnet.container_subnet[*].id
